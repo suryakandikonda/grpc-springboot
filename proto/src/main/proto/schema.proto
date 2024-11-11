@@ -30,4 +30,7 @@ service BookAuthorService {
   // Client Streaming
   rpc getExpensiveBook(stream Book) returns (Book) {}
 
+  // Bi-Directional Streaming
+  rpc getBookByAuthorGender(stream Book) returns (stream Book) {}
+
 }

@@ -77,4 +77,32 @@ public class BookAuthorClientService {
         return await ? response : Collections.emptyMap();
     }
 
+    public List<Map<Descriptors.FieldDescriptor, Object>> getBooksByAuthorGender(String gender) throws InterruptedException {
+        final CountDownLatch countDownLatch = new CountDownLatch(1);
+        final List<Map<Descriptors.FieldDescriptor, Object>> response = new ArrayList<>();
+        StreamObserver<Book> responseObserver = asynschronousClient.getBookByAuthorGender(new StreamObserver<Book>() {
+            @Override
+            public void onNext(Book book) {
+                response.add(book.getAllFields());
+            }
+
+            @Override
+            public void onError(Throwable throwable) {
+                countDownLatch.countDown();
+            }
+
+            @Override
+            public void onCompleted() {
+                countDownLatch.countDown();
+            }
+        });
+        TempDb.getAuthorsFromTempDb()
+                .stream()
+                .filter(author -> author.getGender().equalsIgnoreCase(gender))
+                .forEach(author -> responseObserver.onNext(Book.newBuilder().setAuthorId(author.getAuthorId()).build()));
+        responseObserver.onCompleted();
+        boolean await = countDownLatch.await(1, TimeUnit.MINUTES);
+        return await ? response : Collections.emptyList();
+    }
+
 }
